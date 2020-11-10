@@ -21,6 +21,12 @@ then
    SZIP_ON_OFF="--with-szlib=${INSTALL_PATH}"
 fi
 
+HDF5_ASYNC="${HDF5_ASYNC:-OFF}"
+if [ "$HDF5_ASYNC" == "ON" ]
+then
+    ASYNC="--enable-threadsafe --enable-unsupported"
+fi
+
 MPI="${MPI:-OFF}"
 if [ "$MPI" == "ON" ]
 then
@@ -89,7 +95,7 @@ if [ "${H5VERSION}" == "V18" ]
 then
     ./configure --prefix=${INSTALL_PATH} ${ZLIB_ON_OFF} ${SZIP_ON_OFF} ${BUILD_MODE} ${USE_SHARED} ${PARALLEL_ON_OFF} --enable-static-exec $1
 else
-    ./configure --prefix=${INSTALL_PATH} ${ZLIB_ON_OFF} ${SZIP_ON_OFF} ${BUILD_MODE} ${USE_SHARED} ${PARALLEL_ON_OFF} --with-default-api-version=v18 --enable-static-exec $1
+    ./configure --prefix=${INSTALL_PATH} ${ZLIB_ON_OFF} ${SZIP_ON_OFF} ${BUILD_MODE} ${USE_SHARED} ${PARALLEL_ON_OFF} --with-default-api-version=v18 --enable-static-exec ${ASYNC} $1
 fi
 
 echo ""
@@ -99,4 +105,5 @@ echo "       DEBUG: ${DEBUG} ${BUILD_MODE}"
 echo "      ACCESS: ${ACCESS}"
 echo "  NEEDS_SZIP: ${NEEDS_SZIP}"
 echo "INSTALL_PATH: ${INSTALL_PATH}"
+echo "  HDF5_ASYNC: ${HDF5_ASYNC}"
 echo ""

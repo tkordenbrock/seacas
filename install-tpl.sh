@@ -81,6 +81,9 @@ check_valid_on_off PARMETIS
 GNU_PARALLEL=${GNU_PARALLEL:-ON}
 check_valid_on_off GNU_PARALLEL
 
+HDF5_ASYNC=${HDF5_ASYNC:-NO}
+check_valid_yes_no HDF5_ASYNC
+
 NEEDS_ZLIB=${NEEDS_ZLIB:-NO}
 check_valid_yes_no NEEDS_ZLIB
 
@@ -328,6 +331,60 @@ then
 	exit 1
     fi
 
+    if [ "$HDF5_ASYNC" == "YES" ]
+    then
+    cd $ACCESS
+    cd TPL/hdf5
+    if [ "$DOWNLOAD" == "YES" ]
+    then
+	echo "${txtgrn}+++ Downloading...${txtrst}"
+        rm -rf hdf5-async
+	git clone https://github.com/HDFGroup/hdf5.git hdf5-async
+	git clone https://bitbucket.hdfgroup.org/scm/hdf5vol/async.git
+        wget --no-check-certificate https://github.com/pmodels/argobots/releases/download/v1.0/argobots-1.0.tar.gz
+        tar xf argobots-1.0.tar.gz
+    fi
+
+    if [ "$BUILD" == "YES" ]
+    then
+	echo "${txtgrn}+++ Configuring, Building, and Installing...${txtrst}"
+        cd hdf5-async
+	git checkout async
+	./autogen.sh
+	HDF5_ASYNC=${HDF5_ASYNC} CRAY=${CRAY} H5VERSION=${H5VERSION} DEBUG=${DEBUG} SHARED=${SHARED} NEEDS_ZLIB=${NEEDS_ZLIB} NEEDS_SZIP=${NEEDS_SZIP} MPI=${MPI} bash ../runconfigure.sh
+        if [[ $? != 0 ]]
+        then
+            echo 1>&2 ${txtred}couldn\'t configure hdf5. exiting.${txtrst}
+            exit 1
+        fi
+        make -j${JOBS} && ${SUDO} make "V=${VERBOSE}" install
+        if [[ $? != 0 ]]
+        then
+            echo 1>&2 ${txtred}couldn\'t build hdf5. exiting.${txtrst}
+            exit 1
+        fi
+
+	echo "${txtgrn}+++ Configuring, Building, and Installing...Argobots...${txtrst}"
+	cd ../argobots-1.0
+	./autogen.sh
+	CC=mpicc ./configure --prefix=${INSTALL_PATH}
+	make -j${JOBS} && ${SUDO} make "V=${VERBOSE}" install
+        if [[ $? != 0 ]]
+        then
+            echo 1>&2 ${txtred}couldn\'t build Argobots. exiting.${txtrst}
+            exit 1
+        fi
+
+	echo "${txtgrn}+++ Configuring, Building, and Installing...Asyncrhonous VOL connector...${txtrst}"
+	cd ../async/src
+	make
+        if [[ $? != 0 ]]
+        then
+            echo 1>&2 ${txtred}couldn\'t build Argobots. exiting.${txtrst}
+            exit 1
+        fi
+    fi
+    else
     cd $ACCESS
     cd TPL/hdf5
     if [ "$DOWNLOAD" == "YES" ]
@@ -371,6 +428,7 @@ then
             exit 1
         fi
     fi
+fi
 else
     echo "${txtylw}+++ HDF5 already installed.  Skipping download and installation.${txtrst}"
 fi
