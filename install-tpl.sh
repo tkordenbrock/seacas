@@ -117,6 +117,14 @@ then
     export https_proxy="https://wwwproxy.sandia.gov:80"
 fi
 
+ASYNC_VOL=${ASYNC_VOL:-OFF}
+ARGOBOTS=${ARGOBOTS:-OFF}
+if [ "${HDF5_ASYNC}" == "YES" ]
+then
+    ASYNC_VOL=YES
+    ARGOBOTS=YES
+fi
+
 pwd
 export ACCESS=$(pwd)
 INSTALL_PATH=${INSTALL_PATH:-${ACCESS}}
@@ -340,9 +348,6 @@ then
 	echo "${txtgrn}+++ Downloading...${txtrst}"
         rm -rf hdf5-async
 	git clone https://github.com/HDFGroup/hdf5.git hdf5-async
-	git clone https://bitbucket.hdfgroup.org/scm/hdf5vol/async.git
-        wget --no-check-certificate https://github.com/pmodels/argobots/releases/download/v1.0/argobots-1.0.tar.gz
-        tar xf argobots-1.0.tar.gz
     fi
 
     if [ "$BUILD" == "YES" ]
@@ -364,25 +369,6 @@ then
             exit 1
         fi
 
-	echo "${txtgrn}+++ Configuring, Building, and Installing...Argobots...${txtrst}"
-	cd ../argobots-1.0
-	./autogen.sh
-	CC=mpicc ./configure --prefix=${INSTALL_PATH}
-	make -j${JOBS} && ${SUDO} make "V=${VERBOSE}" install
-        if [[ $? != 0 ]]
-        then
-            echo 1>&2 ${txtred}couldn\'t build Argobots. exiting.${txtrst}
-            exit 1
-        fi
-
-	echo "${txtgrn}+++ Configuring, Building, and Installing...Asyncrhonous VOL connector...${txtrst}"
-	cd ../async/src
-	make
-        if [[ $? != 0 ]]
-        then
-            echo 1>&2 ${txtred}couldn\'t build Argobots. exiting.${txtrst}
-            exit 1
-        fi
     fi
     else
     cd $ACCESS
@@ -432,6 +418,53 @@ fi
 else
     echo "${txtylw}+++ HDF5 already installed.  Skipping download and installation.${txtrst}"
 fi
+
+if [ "$ARGOBOTS" == "YES" ] 
+then
+    if [ "$FORCE" == "YES" ] || ! [ -e $INSTALL_PATH/lib/libabt.a ]
+    then
+	echo "${txtgrn}+++ Downloading...${txtrst}"
+        cd $ACCESS
+        cd TPL/hdf5
+	rm -rf argobots
+	git clone https://github.com/pmodels/argobots
+
+	echo "${txtgrn}+++ Configuring, Building, and Installing...Argobots...${txtrst}"
+	cd argobots
+	./autogen.sh
+	CC=mpicc ./configure --prefix=${INSTALL_PATH}
+	make -j${JOBS} && ${SUDO} make "V=${VERBOSE}" install
+        if [[ $? != 0 ]]
+        then
+            echo 1>&2 ${txtred}couldn\'t build Argobots. exiting.${txtrst}
+            exit 1
+        fi
+
+    else
+	echo "${txtylw}+++ ARGOBOTS already installed.  Skipping download and installation.${txtrst}"
+    fi
+fi
+
+if [ "$ASYNC_VOL" == "YES" ] 
+then
+	echo "${txtgrn}+++ Downloading...${txtrst}"
+        cd $ACCESS
+        cd TPL/hdf5
+	rm -rf async
+	git clone https://bitbucket.hdfgroup.org/scm/hdf5vol/async.git
+	echo "${txtgrn}+++ Configuring, Building, and Installing...Asynchronous VOL connector...${txtrst}"
+	cd async/src
+	CC=mpicc HDF5_DIR=${INSTALL_PATH}/ ABT_DIR=${INSTALL_PATH}/ make -e
+        if [[ $? != 0 ]]
+        then
+            echo 1>&2 ${txtred}couldn\'t build Asynchronous VOL connector. exiting.${txtrst}
+            exit 1
+        fi
+	cp libh5async.* ${INSTALL_PATH}/lib/
+else
+    echo "${txtylw}+++ HDF5 ASYNC_VOL already installed.  Skipping download and installation.${txtrst}"
+fi
+
 # =================== INSTALL PnetCDF if parallel build ===============
 if [ "$MPI" == "ON" ]
 then
