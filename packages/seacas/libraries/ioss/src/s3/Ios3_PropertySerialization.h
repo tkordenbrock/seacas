@@ -26,22 +26,19 @@ namespace Ios3 {
   // that are given to the user-defined function.  Some examples are
   // given in this file and are also useful
   //
-  using PropertyFunction = std::function<int(const Ioss::Region &,
-                                             const Ioss::GroupingEntity &,
+  using PropertyFunction = std::function<int(const Ioss::Region &, const Ioss::GroupingEntity &,
                                              const Ioss::Property &)>;
 
   // Applies PropertyFunction 'op' to all properties encountered in
   // the Ioss::Region and it's various Ioss::GroupingEntities
   //
-  IOS3_EXPORT int map_properties(const Ioss::Region &region,
-                                 PropertyFunction    op);
+  IOS3_EXPORT int map_properties(const Ioss::Region &region, PropertyFunction op);
 
   // Applies PropertyFunction 'op' to all properties encountered in
   // the Ioss::GroupingEntity
   //
   IOS3_EXPORT int map_properties(const Ioss::Region         &region,
-                                 const Ioss::GroupingEntity &grouping_entity,
-                                 PropertyFunction            op);
+                                 const Ioss::GroupingEntity &grouping_entity, PropertyFunction op);
 
   IOS3_EXPORT std::vector<unsigned char> pack_property(const Ioss::Region         &region,
                                                        const Ioss::GroupingEntity &entity,

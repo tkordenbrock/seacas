@@ -51,11 +51,10 @@ namespace Ios3 {
       return 0;
   }
 
-  int map_properties(const Ioss::Region         &region,
-                     const Ioss::GroupingEntity &entity,
-                     PropertyFunction            op)
+  int map_properties(const Ioss::Region &region, const Ioss::GroupingEntity &entity,
+                     PropertyFunction op)
   {
-    int rc = 0;
+    int                      rc = 0;
     std::vector<std::string> description;
     entity.property_describe(&description);
     for (auto name : description)
@@ -64,8 +63,7 @@ namespace Ios3 {
     return rc;
   }
 
-  int map_properties(const Ioss::Region &region,
-                     PropertyFunction    op)
+  int map_properties(const Ioss::Region &region, PropertyFunction op)
   {
     int rc = 0;
 
@@ -111,14 +109,10 @@ namespace Ios3 {
     return rc;
   }
 
-  property_entry_t::property_entry_t(const Ioss::Property &property,
-                                     const size_t          start)
-    : basic_type(property.get_type()),
-      is_implicit(property.is_implicit()),
-      is_valid(property.is_valid()),
-      name{start, property.get_name().size()},
-      value{name.offset + name.size, Ios3::data_size(property)},
-      data_size(name.size + value.size)
+  property_entry_t::property_entry_t(const Ioss::Property &property, const size_t start)
+      : basic_type(property.get_type()), is_implicit(property.is_implicit()),
+        is_valid(property.is_valid()), name{start, property.get_name().size()},
+        value{name.offset + name.size, Ios3::data_size(property)}, data_size(name.size + value.size)
   {
   }
 
@@ -133,9 +127,10 @@ namespace Ios3 {
     // copy property_entry_t to meta section
     std::memcpy(reinterpret_cast<char *>(v.data()), &property_entry, sizeof(property_entry_t));
 
-    auto entry     = reinterpret_cast<property_entry_t *>(v.data());
-    auto name_ptr  = reinterpret_cast<char *>(entry->data) + entry->name.offset;
-    auto value_ptr = reinterpret_cast<void *>(reinterpret_cast<char *>(entry->data) + entry->value.offset);
+    auto entry    = reinterpret_cast<property_entry_t *>(v.data());
+    auto name_ptr = reinterpret_cast<char *>(entry->data) + entry->name.offset;
+    auto value_ptr =
+        reinterpret_cast<void *>(reinterpret_cast<char *>(entry->data) + entry->value.offset);
 
     // copy name to data section
     std::memcpy(name_ptr, property.get_name().data(), entry->name.size);
